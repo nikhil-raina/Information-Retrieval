@@ -53,12 +53,15 @@ def indexDocs():
                     try:
                         inverseDocFrequency[token].add(currDocId)
                     except:
-                        inverseDocFrequency[token] = set(currDocId)
+                        inverseDocFrequency[token] = {currDocId}
                     wordsInDoc+=1
         termFrequency[currDocId] = {'doc':wordsInDoc, 'term':wordFrequency}
         currDocId+=1
-    out = open('test.json','w')
+    out = open('tf.json','w')
     json.dump(termFrequency, out)
+    out.close()
+    out = open('idf.json','w')
+    json.dump(list(inverseDocFrequency),out)
     out.close()
     return termFrequency
 
