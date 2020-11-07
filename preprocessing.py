@@ -24,13 +24,9 @@ def loadFile():
                     attr =  tags[i].attrs
                     if 'class' in  attr.keys() and attr['class'] == 'navbox':
                         break
-                    
                 documents[currDoc].append(tags[i].text)
         i += 1
     return documents
-
-
-
 
 
 def indexDocs():
@@ -38,27 +34,33 @@ def indexDocs():
     ps = PorterStemmer()
     currDocId = 0
     docIds = {}
-    docFrequencies = {}
-
+    termFrequency = {}
+    inverseDocFrequency = {}
     for docName in docs.keys():
         wordFrequency = {}
-        docFrequency = 0
+        wordsInDoc = 0
         docIds[currDocId] = docName
         for line in docs[docName]:
             tokens = re.split(r'\s+|['+punctuation+r']\s*', line.strip())
-            tokens = [ps.stem(token) for token in tokens]
+            tokens = [ps.stem(token).lower() for token in tokens]
             for token in tokens:
                 if token != '':
-                    if token in wordFrequency.keys():
+                    try:
                         wordFrequency[token]+=1
-                    else:
+                    except:
                         wordFrequency[token] = 1
-                    docFrequency+=1
-        docFrequencies[currDocId] = {'doc':docFrequency, 'words':wordFrequency}
-
+                    
+                    try:
+                        inverseDocFrequency[token].add(currDocId)
+                    except:
+                        inverseDocFrequency[token] = set(currDocId)
+                    wordsInDoc+=1
+        termFrequency[currDocId] = {'doc':wordsInDoc, 'term':wordFrequency}
         currDocId+=1
     out = open('test.json','w')
-    json.dump(docFrequencies, out)
+    json.dump(termFrequency, out)
+    out.close()
+    return termFrequency
 
 
 indexDocs()
