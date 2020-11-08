@@ -5,7 +5,19 @@ import re
 import json
 import math
 
-
+STOPWORDS = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", 
+            "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers',
+            'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 
+            'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have',
+            'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as',
+            'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 
+            'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then',
+            'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some',
+            'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', "don't",
+            'should', "should've", 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', "aren't", 'couldn', "couldn't", 'didn', "didn't",
+            'doesn', "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn',
+            "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', "won't", 
+            'wouldn', "wouldn't"]
 
 #using utf-8 format as the html files where encoded in that and has special chars that require it to be utf-8
 
@@ -20,24 +32,71 @@ def loadFile():
     i=0
     while i < len(tags):
         if tags[i] != '\n':
-           
             if tags[i].name == 'h2':
                 currDoc = tags[i].text.strip()
                 htmlID = tags[i].attrs['id']
                 htmlIDs[currDoc] = htmlID
-                documents[currDoc] = [currDoc]
+                try:
+                    documents[currDoc].append(currDoc)
+                except:
+                    documents[currDoc] = [currDoc]
             elif currDoc != None:
                 if tags[i].name == 'table':
                     attr =  tags[i].attrs
                     if 'class' in  attr.keys() and attr['class'] == 'navbox':
                         break
-                documents[currDoc].append(tags[i].text)
+                text = tags[i].text.strip()
+                if text:
+                    documents[currDoc].append(text)
         i += 1
     return documents, htmlIDs
 
 
-def indexDocsTdidf():
-    docs, htmlIDs = loadFile()
+
+def sentenceSelection( docIds, query):
+    global docs
+    termFrequency = json.load(open('tfidf/tf.json','r', encoding='utf-8'))
+    docIds = json.load(open('tfidf/docIds.json','r',encoding='utf-8'))
+    ps = PorterStemmer()
+    documentSignificance = {} 
+    for docId in docIds:
+        docName = docIds[docId]
+        sd = len(docs[docName])
+        if sd < 25:
+            limit = 7 + (0.1*(sd-40))
+        elif sd <= 40:
+            limit = 7
+        else:
+            limit = 7 - (0.1*(25-sd))
+
+        bestSentence = [None, None, None]
+        s = ''
+        docs[docName] = ' '.join(docs[docName]).split('.')
+        for sentence in docs[docName]:
+            tokens = re.split(r'\s+|['+punctuation+r']\s*', sentence.strip().lower())
+            tokens = [ps.stem(k) for k in tokens]
+            if not any(item in tokens for item in query):
+                continue
+            sigWords = []
+            for token in tokens:
+                if token == '':
+                    continue
+                if termFrequency[docId][token] >= limit:
+                    sigWords.append(1)
+                else:
+                    sigWords.append(0)
+            try:
+                currSentence = ([sum(sigWords), sigWords.index(1), len(sigWords) - 1 - sigWords[::-1].index(1)])
+            except:
+                continue
+            if bestSentence[1] == None or bestSentence[1] < currSentence[1]:
+                bestSentence = currSentence
+                s = re.split(r'\s+|['+punctuation+r']\s*', sentence.strip())
+                s = ' '.join(s) + '\n'
+        documentSignificance[docId] = s
+    return documentSignificance
+
+def indexDocsTdidf(docs, htmlIDs):
     ps = PorterStemmer()
     currDocId = 0
     docIds = {}
@@ -60,7 +119,6 @@ def indexDocsTdidf():
                     except:
                         invertedIndex[token] = {currDocId}
         termFrequency[currDocId] = wordFrequency
-
         currDocId+=1
     invertedIndex = {k:list(v) for k,v in invertedIndex.items()}
     inverseDocFrequency = {k: math.log(len(docIds)/(len(v))) for k,v in invertedIndex.items()}        
@@ -100,9 +158,8 @@ def indexDocsTdidf():
     json.dump(htmlIDs,out,ensure_ascii=False)
     out.close()
 
-def indexDocsBM25():
+def indexDocsBM25(docs, htmlIDs):
     k1,  b  = 1.0, 0.75
-    docs, htmlIDs = loadFile()
     ps = PorterStemmer()
     currDocId = 0
     docIds = {}
@@ -146,6 +203,10 @@ def indexDocsBM25():
     json.dump(htmlIDs, out,ensure_ascii=False)
     out.close()
 
-indexDocsTdidf()
-indexDocsBM25()
+docs, htmlIDs = loadFile()
+
+if __name__ == "__main__":
+    indexDocsTdidf(docs, htmlIDs)
+    indexDocsBM25(docs, htmlIDs)    
+    pass
 
