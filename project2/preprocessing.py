@@ -5,6 +5,10 @@ import re
 import json
 import math
 
+
+alpha = 0.3
+
+
 #using utf-8 format as the html files where encoded in that and has special chars that require it to be utf-8
 
 def loadFile():
@@ -18,8 +22,8 @@ def loadFile():
     while i < len(tags):
         if tags[i] != '\n':
             if tags[i].name == 'h2':
-                currDoc = tags[i].text
-                documents[currDoc] = []
+                currDoc = tags[i].text.strip()
+                documents[currDoc] = [currDoc]
             elif currDoc != None:
                 if tags[i].name == 'table':
                     attr =  tags[i].attrs
@@ -57,33 +61,33 @@ def indexDocs():
                     wordsInDoc+=1.0
         for word in wordFrequency.keys():
             wordFrequency[word] /= wordsInDoc 
-        termFrequency[currDocId] = {'doc':wordsInDoc, 'term':wordFrequency}
+        termFrequency[currDocId] = {'doc':wordsInDoc, 'terms':wordFrequency}
 
         currDocId+=1
-    
-    inverseDocFrequency = {k: math.log(len(docIds)/(len(v)+1)) for k,v in invertedIndex.items()}
-    
+    invertedIndex = {k:list(v) for k,v in invertedIndex.items()}
+    inverseDocFrequency = {k: math.log(len(docIds)/(len(v)+1)) for k,v in invertedIndex.items()}        
     tf_idf = {}
-
     for id in docIds.keys():
-        for term in termFrequency[id]['term'].keys():
+        for term in termFrequency[id]['terms'].keys():
             try:
-                tf_idf[id][term] = termFrequency[id]['term'][term] * inverseDocFrequency[term]
+                tf_idf[id][term] = termFrequency[id]['terms'][term] * inverseDocFrequency[term]
             except:
-                tf_idf[id] = {term:termFrequency[id]['term'][term] * inverseDocFrequency[term]}
-    
+                tf_idf[id] = {term:termFrequency[id]['terms'][term] * inverseDocFrequency[term]}
+            if term not in [ ps.stem(token) for token in docIds[id].lower().split()]:
+                tf_idf[id][term] *= alpha
     out = open('tf.json','w', encoding='utf-8')
     json.dump(termFrequency, out,ensure_ascii=False)
     out.close()
     out = open('idf.json','w',encoding='utf-8')
     json.dump(inverseDocFrequency,out,ensure_ascii=False)
     out.close()
+    out = open('invertedIndex.json','w',encoding='utf-8')
+    json.dump(invertedIndex,out,ensure_ascii=False)
+    out.close()
     out = open('tf_idf.json','w',encoding='utf-8')
     json.dump(tf_idf,out,ensure_ascii=False)
     out.close()
-
-
-
-
-    return termFrequency
+    out = open('docIds.json','w',encoding='utf-8')
+    json.dump(docIds,out,ensure_ascii=False)
+    out.close()
 indexDocs()

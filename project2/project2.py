@@ -1,29 +1,41 @@
 import json 
+import sys
+import time
+from nltk.stem import PorterStemmer
 
-a = json.load(open('tf_idf.json'))
+
+tf_idf = json.load(open('tf_idf.json'))
+invertedIndex = json.load(open('invertedIndex.json'))
+docIds = json.load(open('docIds.json'))
+ps = PorterStemmer()
 
 def search(query):
-    try:
-        #finding the length of inverted lists for all the query words
-        inverted_list_len = []
-        for q in query:
-            inverted_list_len.append(len(inverted_list[q]))
-        zipped = zip(inverted_list_len, query)
-        #sorting the query words accoring to the inverted list length.
-        query = [x for _,x in sorted(zipped)]
-        #using the doc_list for the first query word
-        curr_docs = inverted_list[query[0]]
-        #looping through all other query words
-        for q in query[1:]:
-            q1Docs = curr_docs
-            q2Docs = inverted_list[q]
-            curr_docs = {}
-            #checks if both q1 and q2 docs have the documents in them 
-            for doc_id in q1Docs.keys():
-                if doc_id in q2Docs.keys():
-                    curr_docs[doc_id] = q1Docs[doc_id] + q2Docs[doc_id]
-        #sorting the documents 
-        curr_docs = {k : v for k, v in sorted(curr_docs.items(), key = lambda item: item[1], reverse=True)}    
-        return curr_docs    
-    except:
-        return {}
+    doc_score = {}
+    for term in query:
+        try:
+            for doc_id in invertedIndex[term]:
+                try:
+                    doc_score[doc_id] += tf_idf[str(doc_id)][term]
+                except:
+                    doc_score[doc_id] = tf_idf[str(doc_id)][term]
+        except:
+            continue
+    doc_score = {k : v for k, v in sorted(doc_score.items(), key = lambda item: item[1], reverse=True)} 
+    return doc_score
+
+if __name__ == "__main__":
+    start_time = time.time()
+    # if len(sys.argv) < 2:
+    #     print('Usage : python dfd.py query')
+    #     exit()
+    query = ['magical', 'mystery', 'cure']
+    query = [ps.stem(x.lower()) for x in query]
+    doc_score = search(query)
+    print('Execution Time: ', time.time()-start_time)
+    print('Total unique matched documents: ', len(doc_score))
+    count = 0
+    for doc_id in doc_score.keys():
+        if count == 20:
+            exit()
+        print(str(doc_id) + ' ' + docIds[str(doc_id)])
+        count+=1
