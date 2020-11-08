@@ -101,7 +101,7 @@ def indexDocsTdidf():
     out.close()
 
 def indexDocsBM25():
-    k1, k2, b, qf = 1.0, 100.0, 0.75, 1.0
+    k1,  b  = 1.0, 0.75
     docs, htmlIDs = loadFile()
     ps = PorterStemmer()
     currDocId = 0
@@ -142,6 +142,10 @@ def indexDocsBM25():
     out = open('BM25/score.json','w', encoding='utf-8')
     json.dump(B25Score, out,ensure_ascii=False)
     out.close()
+    out = open('BM25/htmlIds.json','w', encoding='utf-8')
+    json.dump(htmlIDs, out,ensure_ascii=False)
+    out.close()
 
+indexDocsTdidf()
 indexDocsBM25()
 
