@@ -8,7 +8,7 @@ import json
 
 def loadFile():
     documents = {} #key=doc; value=document
-    transcriptFile = open('project2/p2-data/All Transcripts - My Little Pony Friendship is Magic Wiki.html')
+    transcriptFile = open('project2/p2-data/All Transcripts - My Little Pony Friendship is Magic Wiki.html', encoding='utf-8')
     soup = BeautifulSoup(transcriptFile.read(), 'html.parser')
     transcriptFile.close()
     tags = soup.find(id='mw-content-text').find('p').contents
@@ -42,14 +42,13 @@ def indexDocs():
         docIds[currDocId] = docName
         for line in docs[docName]:
             tokens = re.split(r'\s+|['+punctuation+r']\s*', line.strip())
-            tokens = [ps.stem(token).lower() for token in tokens]
             for token in tokens:
+                token = token.lower()
                 if token != '':
                     try:
                         wordFrequency[token]+=1
                     except:
                         wordFrequency[token] = 1
-                    
                     try:
                         inverseDocFrequency[token].add(currDocId)
                     except:
@@ -57,13 +56,12 @@ def indexDocs():
                     wordsInDoc+=1
         termFrequency[currDocId] = {'doc':wordsInDoc, 'term':wordFrequency}
         currDocId+=1
-    out = open('tf.json','w')
-    json.dump(termFrequency, out)
+    inverseDocFrequency = {k:len(v) for k,v in inverseDocFrequency.items()}
+    out = open('tf.json','w', encoding='utf-8')
+    json.dump(termFrequency, out,ensure_ascii=False)
     out.close()
-    out = open('idf.json','w')
-    json.dump(list(inverseDocFrequency),out)
+    out = open('idf.json','w',encoding='utf-8')
+    json.dump(inverseDocFrequency,out,ensure_ascii=False)
     out.close()
     return termFrequency
-
-
 indexDocs()
