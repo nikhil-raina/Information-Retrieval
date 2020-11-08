@@ -36,7 +36,7 @@ def loadFile():
     return documents, htmlIDs
 
 
-def indexDocs():
+def indexDocsTdidf():
     docs, htmlIDs = loadFile()
     ps = PorterStemmer()
     currDocId = 0
@@ -99,4 +99,49 @@ def indexDocs():
     out = open('tfidf/htmlIds.json','w',encoding='utf-8')
     json.dump(htmlIDs,out,ensure_ascii=False)
     out.close()
-indexDocs()
+
+def indexDocsBM25():
+    k1, k2, b, qf = 1.0, 100.0, 0.75, 1.0
+    docs, htmlIDs = loadFile()
+    ps = PorterStemmer()
+    currDocId = 0
+    docIds = {}
+    termFrequency = {}
+    invertedIndex = {}
+    docLengths = {}
+    totalDoclengths = 0
+    for docName in docs.keys():
+        wordFrequency = {}
+        docIds[currDocId] = docName
+        docLength = 0
+        for line in docs[docName]:
+            tokens = re.split(r'\s+|['+punctuation+r']\s*', line.strip())
+            for token in tokens:
+                token = ps.stem(token.lower())
+                if token != '':
+                    try:
+                        wordFrequency[token]+=1.0
+                    except:
+                        wordFrequency[token] = 1.0
+                    try:
+                        invertedIndex[token].add(currDocId)
+                    except:
+                        invertedIndex[token] = {currDocId}
+                    docLength+=1
+        docLengths[currDocId] = docLength
+        totalDoclengths += docLength
+        termFrequency[currDocId] = wordFrequency
+        currDocId+=1
+    docLengths = {k:(v/totalDoclengths) for k,v in docLengths.items()}
+    Kvals = {k: k1*((1-b)+(v*b)) for k,v in docLengths.items()}
+    B25Score = {}
+    for docId in docIds.keys():
+        B25Score[docId] = {k: (math.log((len(docIds) - len(invertedIndex[k]) + 0.5 )/((len(invertedIndex[k]) + 0.5)))*
+                                        (((k1+1.0)*v)/(0.0+Kvals[docId] + v))) for k, v in termFrequency[docId].items()}
+
+    out = open('BM25/score.json','w', encoding='utf-8')
+    json.dump(B25Score, out,ensure_ascii=False)
+    out.close()
+
+indexDocsBM25()
+
