@@ -12,7 +12,7 @@ import math
 def loadFile():
     documents = {} #key=doc; value=document
     htmlIDs = {}
-    transcriptFile = open('project2/p2-data/All Transcripts - My Little Pony Friendship is Magic Wiki.html', encoding='utf-8')
+    transcriptFile = open('p2-data/All Transcripts - My Little Pony Friendship is Magic Wiki.html', encoding='utf-8')
     soup = BeautifulSoup(transcriptFile.read(), 'html.parser')
     transcriptFile.close()
     tags = soup.find(id='mw-content-text').find('p').contents
@@ -81,22 +81,22 @@ def indexDocs():
     for id in docIds.keys():
         tf_idf[id] = { k: (v/normalization[id]) for k,v in tf_idf[id].items()}
 
-    out = open('tf.json','w', encoding='utf-8')
+    out = open('tfidf/tf.json','w', encoding='utf-8')
     json.dump(termFrequency, out,ensure_ascii=False)
     out.close()
-    out = open('idf.json','w',encoding='utf-8')
+    out = open('tfidf/idf.json','w',encoding='utf-8')
     json.dump(inverseDocFrequency,out,ensure_ascii=False)
     out.close()
-    out = open('invertedIndex.json','w',encoding='utf-8')
+    out = open('tfidf/invertedIndex.json','w',encoding='utf-8')
     json.dump(invertedIndex,out,ensure_ascii=False)
     out.close()
-    out = open('tf_idf.json','w',encoding='utf-8')
+    out = open('tfidf/tf_idf.json','w',encoding='utf-8')
     json.dump(tf_idf,out,ensure_ascii=False)
     out.close()
-    out = open('docIds.json','w',encoding='utf-8')
+    out = open('tfidf/docIds.json','w',encoding='utf-8')
     json.dump(docIds,out,ensure_ascii=False)
     out.close()
-    out = open('htmlIds.json','w',encoding='utf-8')
+    out = open('tfidf/htmlIds.json','w',encoding='utf-8')
     json.dump(htmlIDs,out,ensure_ascii=False)
     out.close()
 indexDocs()

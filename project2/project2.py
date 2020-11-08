@@ -4,9 +4,9 @@ import time
 from nltk.stem import PorterStemmer
 
 
-tf_idf = json.load(open('tf_idf.json'))
-invertedIndex = json.load(open('invertedIndex.json'))
-docIds = json.load(open('docIds.json'))
+tf_idf = json.load(open('tfidf/tf_idf.json'))
+invertedIndex = json.load(open('tfidf/invertedIndex.json'))
+docIds = json.load(open('tfidf/docIds.json'))
 ps = PorterStemmer()
 
 def search(query):
