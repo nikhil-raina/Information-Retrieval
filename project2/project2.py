@@ -13,9 +13,9 @@ ps = PorterStemmer()
 
 def search(query, scores):
     start_time = time.time()
-    query = [ps.stem(x.lower()) for x in query]
+    query_stem = [ps.stem(x.lower()) for x in query]
     doc_score = {}
-    for term in query:
+    for term in query_stem:
         try:
             for doc_id in invertedIndex[term]:
                 doc_id = str(doc_id)
@@ -26,7 +26,7 @@ def search(query, scores):
         except:
             continue
     doc_score = [k for k, v in sorted(doc_score.items(), key = lambda item: item[1], reverse=True)]
-    summary = preprocessing.sentenceSelection(doc_score, query)
+    summary = preprocessing.sentenceSelection(doc_score, query_stem)
     finalResult = []
     for doc_id in doc_score:
         document = {}
@@ -40,10 +40,10 @@ def search(query, scores):
     count = 0
     for doc in finalResult:
         if count == 10:
-            exit()
+            break
         print(doc['title'] + '\t' + doc['summary']+'\t'+doc['link'])
         count+=1    
-    return finalResult
+    return {'query': query, 'result': finalResult}
 
 
 if __name__ == "__main__":
@@ -59,6 +59,9 @@ if __name__ == "__main__":
     #     doc_score = search(query, BM25)    
 
     doc_score = search(['Rarity' ,'manehattan'], BM25)
+
+    with open('result.json', 'w') as result_file:
+        json.dump(doc_score, result_file)
 
     
     
