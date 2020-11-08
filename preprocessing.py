@@ -3,8 +3,9 @@ from nltk.stem import PorterStemmer
 from string import punctuation
 import re
 import json
+import math
 
-
+#using utf-8 format as the html files where encoded in that and has special chars that require it to be utf-8
 
 def loadFile():
     documents = {} #key=doc; value=document
@@ -38,7 +39,7 @@ def indexDocs():
     inverseDocFrequency = {}
     for docName in docs.keys():
         wordFrequency = {}
-        wordsInDoc = 0
+        wordsInDoc = 0.0
         docIds[currDocId] = docName
         for line in docs[docName]:
             tokens = re.split(r'\s+|['+punctuation+r']\s*', line.strip())
@@ -46,22 +47,28 @@ def indexDocs():
                 token = token.lower()
                 if token != '':
                     try:
-                        wordFrequency[token]+=1
+                        wordFrequency[token]+=1.0
                     except:
-                        wordFrequency[token] = 1
+                        wordFrequency[token] = 1.0
                     try:
                         inverseDocFrequency[token].add(currDocId)
                     except:
                         inverseDocFrequency[token] = {currDocId}
-                    wordsInDoc+=1
+                    wordsInDoc+=1.0
+        for word in wordFrequency.keys():
+            wordFrequency[word] /= wordsInDoc 
         termFrequency[currDocId] = {'doc':wordsInDoc, 'term':wordFrequency}
+
         currDocId+=1
-    inverseDocFrequency = {k:len(v) for k,v in inverseDocFrequency.items()}
+    inverseDocFrequency = {k: math.log(len(docIds)/(len(v)+1)) for k,v in inverseDocFrequency.items()}
     out = open('tf.json','w', encoding='utf-8')
     json.dump(termFrequency, out,ensure_ascii=False)
     out.close()
     out = open('idf.json','w',encoding='utf-8')
     json.dump(inverseDocFrequency,out,ensure_ascii=False)
     out.close()
+
+
+
     return termFrequency
 indexDocs()
