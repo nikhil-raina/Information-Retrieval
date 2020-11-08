@@ -28,14 +28,14 @@ if __name__ == "__main__":
     # if len(sys.argv) < 2:
     #     print('Usage : python dfd.py query')
     #     exit()
-    query = ['magical', 'mystery', 'cure']
+    query = [ 'part', '1' , 'pie']
     query = [ps.stem(x.lower()) for x in query]
     doc_score = search(query)
     print('Execution Time: ', time.time()-start_time)
     print('Total unique matched documents: ', len(doc_score))
     count = 0
     for doc_id in doc_score.keys():
-        if count == 20:
+        if count == 15:
             exit()
         print(str(doc_id) + ' ' + docIds[str(doc_id)])
         count+=1

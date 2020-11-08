@@ -6,13 +6,12 @@ import json
 import math
 
 
-alpha = 0.3
-
 
 #using utf-8 format as the html files where encoded in that and has special chars that require it to be utf-8
 
 def loadFile():
     documents = {} #key=doc; value=document
+    htmlIDs = {}
     transcriptFile = open('project2/p2-data/All Transcripts - My Little Pony Friendship is Magic Wiki.html', encoding='utf-8')
     soup = BeautifulSoup(transcriptFile.read(), 'html.parser')
     transcriptFile.close()
@@ -21,8 +20,11 @@ def loadFile():
     i=0
     while i < len(tags):
         if tags[i] != '\n':
+           
             if tags[i].name == 'h2':
                 currDoc = tags[i].text.strip()
+                htmlID = tags[i].attrs['id']
+                htmlIDs[currDoc] = htmlID
                 documents[currDoc] = [currDoc]
             elif currDoc != None:
                 if tags[i].name == 'table':
@@ -31,11 +33,11 @@ def loadFile():
                         break
                 documents[currDoc].append(tags[i].text)
         i += 1
-    return documents
+    return documents, htmlIDs
 
 
 def indexDocs():
-    docs = loadFile()
+    docs, htmlIDs = loadFile()
     ps = PorterStemmer()
     currDocId = 0
     docIds = {}
@@ -43,7 +45,6 @@ def indexDocs():
     invertedIndex = {}
     for docName in docs.keys():
         wordFrequency = {}
-        wordsInDoc = 0.0
         docIds[currDocId] = docName
         for line in docs[docName]:
             tokens = re.split(r'\s+|['+punctuation+r']\s*', line.strip())
@@ -58,23 +59,28 @@ def indexDocs():
                         invertedIndex[token].add(currDocId)
                     except:
                         invertedIndex[token] = {currDocId}
-                    wordsInDoc+=1.0
-        for word in wordFrequency.keys():
-            wordFrequency[word] /= wordsInDoc 
-        termFrequency[currDocId] = {'doc':wordsInDoc, 'terms':wordFrequency}
+        termFrequency[currDocId] = wordFrequency
 
         currDocId+=1
     invertedIndex = {k:list(v) for k,v in invertedIndex.items()}
-    inverseDocFrequency = {k: math.log(len(docIds)/(len(v)+1)) for k,v in invertedIndex.items()}        
+    inverseDocFrequency = {k: math.log(len(docIds)/(len(v))) for k,v in invertedIndex.items()}        
     tf_idf = {}
+    normalization = {}
     for id in docIds.keys():
-        for term in termFrequency[id]['terms'].keys():
+        for term in termFrequency[id].keys():
             try:
-                tf_idf[id][term] = termFrequency[id]['terms'][term] * inverseDocFrequency[term]
+                tf_idf[id][term] = (math.log(termFrequency[id][term]) + 1.0) * inverseDocFrequency[term]
+                normalization[id] += tf_idf[id][term]**2
             except:
-                tf_idf[id] = {term:termFrequency[id]['terms'][term] * inverseDocFrequency[term]}
-            if term not in [ ps.stem(token) for token in docIds[id].lower().split()]:
-                tf_idf[id][term] *= alpha
+                tf_idf[id] = {term:termFrequency[id][term] * inverseDocFrequency[term]}
+                normalization[id] = tf_idf[id][term]**2
+
+    normalization = {k: (v**(1/2)) for k,v in normalization.items()}
+    
+
+    for id in docIds.keys():
+        tf_idf[id] = { k: (v/normalization[id]) for k,v in tf_idf[id].items()}
+
     out = open('tf.json','w', encoding='utf-8')
     json.dump(termFrequency, out,ensure_ascii=False)
     out.close()
@@ -89,5 +95,8 @@ def indexDocs():
     out.close()
     out = open('docIds.json','w',encoding='utf-8')
     json.dump(docIds,out,ensure_ascii=False)
+    out.close()
+    out = open('htmlIds.json','w',encoding='utf-8')
+    json.dump(htmlIDs,out,ensure_ascii=False)
     out.close()
 indexDocs()
