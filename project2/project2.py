@@ -37,19 +37,16 @@ def search(query, scores):
 
 
 if __name__ == "__main__":
-    
     if len(sys.argv) < 2:
         print('Usage : python project2.py <modelType> query')
         print('modelType: tfidf | BM25')
         exit()
     print(sys.argv)
     if sys.argv[1] == 'tfidf':
-        print('tfidf')
-        query = sys.argv[3:]
+        query = sys.argv[2:]
         doc_score = search(query, tf_idf)
     else:
-        print('bm25')
-        query = sys.argv[3:]
+        query = sys.argv[2:]
         doc_score = search(query, BM25)    
     
     
