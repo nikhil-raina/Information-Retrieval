@@ -68,7 +68,7 @@ def search(query, scores):
 
 #main
 if __name__ == "__main__":
-    check input arguments 
+    # check input arguments 
     if len(sys.argv) < 2:
         print('Usage : python project2.py <modelType> query')
         print('modelType: tfidf | BM25')
