@@ -87,7 +87,7 @@ def sentenceSelection( docIds, query):
         docName = docIds[docId]
 
         #separating sentences in the document 
-        docs[docName] = ' '.join(docs[docName]).split('.')
+        docs[docName] = ' '.join(docs[docName]).split('\n')
 
         #document length
         sd = len(docs[docName])

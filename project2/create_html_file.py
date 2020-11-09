@@ -44,7 +44,7 @@ Method that accepts a file writer and a list with some data:
         ]
 """
 def write_html(file, document_list):
-    web_page_link = 'p2-data/All Transcripts - My Little Pony Friendship is Magic Wiki.html'
+    web_page_link = 'All Transcripts - My Little Pony Friendship is Magic Wiki.html'
     string_start_buffer = """<html>    
     <head>
         <style>

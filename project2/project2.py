@@ -60,6 +60,7 @@ def search(query, scores):
     print('Execution Time: ', end_time-start_time)
     print('Total unique matched documents: ', len(doc_score))
 
+    query = [ q for q in query if q.lower() not in preprocessing.STOPWORDS]
     #print the result to the console
     # for doc in finalResult:
     #     print(doc['title'] + '\t\t' + doc['summary']+'\t\t'+doc['link'])
