@@ -132,7 +132,7 @@ def sentenceSelection( docIds, query):
             if bestSentence == None or bestSentence < currSentence:
                 bestSentence = currSentence
                 s = sentence.replace('\n',' ') 
-        documentSignificance[docId] = s
+        documentSignificance[docId] = '...'+ s[0: 300 if len(s) > 300 else len(s)] + '...'
     return documentSignificance
 
 #creates index files for td.idf
