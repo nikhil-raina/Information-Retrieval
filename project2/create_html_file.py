@@ -71,11 +71,11 @@ def write_html(file, document_list):
             string_start_buffer += '\t\t</div>\n\t'
     string_end_buffer = string_start_buffer + "</body>\n</html>"
     file.write(string_end_buffer)
-    file_writer.close()
+    file.close()
 
 
 if __name__ == "__main__":
-    file_writer = open('result.html', 'w');
+    file_writer = open('result.html', 'w')
     mock_data = open('result.json', 'r')
-    mock_data = j.load(mock_data);
+    mock_data = j.load(mock_data)
     write_html(file_writer, mock_data)

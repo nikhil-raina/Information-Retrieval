@@ -225,7 +225,7 @@ def indexDocsTdidf(docs, htmlIDs):
 
 #creates index files for BM25
 def indexDocsBM25(docs, htmlIDs):
-    k1,  b  = 1.0, 0.75
+    k1,  b  = 1.2, 0.75
     ps = PorterStemmer()
     currDocId = 0
     docIds = {}

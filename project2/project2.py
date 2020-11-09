@@ -3,6 +3,7 @@ import sys
 import time
 from nltk.stem import PorterStemmer
 import preprocessing
+import create_html_file
 
 
 #loading json files created by preprocessing.py
@@ -60,36 +61,36 @@ def search(query, scores):
     print('Total unique matched documents: ', len(doc_score))
 
     #print the result to the console
-    for doc in finalResult:
-        print(doc['title'] + '\t\t' + doc['summary']+'\t\t'+doc['link'])
-
+    # for doc in finalResult:
+    #     print(doc['title'] + '\t\t' + doc['summary']+'\t\t'+doc['link'])
+    create_html_file.write_html(open( 'html/'+ '_'.join(query) + '_'+sys.argv[1] + '.html', 'w'), {'query': query, 'result': finalResult})
     return {'query': query, 'result': finalResult}
 
 
 #main
 if __name__ == "__main__":
     # check input arguments 
-    if len(sys.argv) < 2:
-        print('Usage : python project2.py <modelType> query')
-        print('modelType: tfidf | BM25')
-        exit()
-    #check which model to test.
-    if sys.argv[1] == 'tfidf':
-        query = sys.argv[2:]
-        doc_score = search(query, tf_idf)
-    else:
-        query = sys.argv[2:]
-        doc_score = search(query, BM25)    
-
+    # if len(sys.argv) < 2:
+    #     print('Usage : python project2.py <modelType> query')
+    #     print('modelType: tfidf | BM25')
+    #     exit()
+    # #check which model to test.
+    # if sys.argv[1] == 'tfidf':
+    #     query = sys.argv[2:]
+    #     doc_score = search(query, tf_idf)
+    # else:
+    #     query = sys.argv[2:]
+    #     doc_score = search(query, BM25)    
+    sys.argv= ['', 'BM25']
     
-    # doc_score = search(['Sounds', 'of', 'Silence'], BM25)
-    # doc_score = search([ 'rarity','manehattan'], tf_idf)
-    # doc_score = search(['Twenty', 'five', 'different', 'types', 'of', 'tricks', 'and', 'counting'], tf_idf)
+    doc_score = search(['Sounds', 'of', 'Silence'], BM25)
+    doc_score = search([ 'rarity','manehattan'], BM25)
+    doc_score = search(['Twenty', 'five', 'different', 'types', 'of', 'tricks', 'and', 'counting'], BM25)
 
 
     # output the result to a json file.
-    with open('result.json', 'w',  encoding='utf-8') as result_file:
-        json.dump(doc_score, result_file)
+    # with open('result.json', 'w',  encoding='utf-8') as result_file:
+    #     json.dump(doc_score, result_file)
 
     
     
