@@ -68,7 +68,7 @@ def search(query, scores):
 
 #main
 if __name__ == "__main__":
-    # check input arguments 
+    check input arguments 
     if len(sys.argv) < 2:
         print('Usage : python project2.py <modelType> query')
         print('modelType: tfidf | BM25')
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     
     # doc_score = search(['Sounds', 'of', 'Silence'], BM25)
-    # doc_score = search(['manehattan'], tf_idf)
+    # doc_score = search([ 'rarity','manehattan'], tf_idf)
     # doc_score = search(['Twenty', 'five', 'different', 'types', 'of', 'tricks', 'and', 'counting'], tf_idf)
 
 
