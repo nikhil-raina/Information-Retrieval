@@ -83,26 +83,36 @@ def sentenceSelection( docIds, query):
         else:
             limit = 7 - (0.1*(25-sd))
 
+        #initial best sentence
         bestSentence = None
         s = ''
         
+        #loop through all the sentences to find the best one 
         for sentence in docs[docName]:
+            #split the sentence on space and punctuations and covert them to lower case
             tokens = re.split(r'\s+|['+punctuation+r']\s*', sentence.strip().lower())
+            #stem the tokens
             tokens = [ps.stem(k) for k in tokens]
+            #check if any query keyword in the tokens
             if not any(item in tokens for item in query):
                 continue
+            #finds the significant word
             sigWords = []
+            #loop through the token
             for token in tokens:
                 if token == '':
                     continue
+                #check if the term frequency for the token is greater than limit
                 if termFrequency[docId][token] >= limit:
                     sigWords.append(1)
                 else:
                     sigWords.append(0)
             try:
+                #find the number of significant words
                 currSentence = sum(sigWords)
             except:
                 continue
+            #check if this is the best number of significant words
             if bestSentence == None or bestSentence < currSentence:
                 bestSentence = currSentence
                 s = sentence.replace('\n',' ') 
@@ -111,48 +121,73 @@ def sentenceSelection( docIds, query):
 
 #creates index files for td.idf
 def indexDocsTdidf(docs, htmlIDs):
+    #stemmer
     ps = PorterStemmer()
+    # document Id counter
     currDocId = 0
+    #dictonary for document id to document title
     docIds = {}
+    #dictionary for term frequency that maps docId -> terms -> frequency
     termFrequency = {}
+    #dictionary for inverted index that maps term -> list of docIds 
     invertedIndex = {}
+    #loop through documents
     for docName in docs.keys():
+        #term frequency for this document
         wordFrequency = {}
+        #store the docId -> docName
         docIds[currDocId] = docName
+        #loop through the lines in document
         for line in docs[docName]:
+            #split the line into tokens
             tokens = re.split(r'\s+|['+punctuation+r']\s*', line.strip())
+            #loop through the tokens
             for token in tokens:
+                #convert the token to lower case and then stem them
                 token = ps.stem(token.lower())
+
                 if token != '':
+                    #add the occurrence of the token
                     try:
                         wordFrequency[token]+=1.0
                     except:
                         wordFrequency[token] = 1.0
+                    #add the document id to inverted index for the term
                     try:
                         invertedIndex[token].add(currDocId)
                     except:
                         invertedIndex[token] = {currDocId}
+        #store the term frequency of the document
         termFrequency[currDocId] = wordFrequency
         currDocId+=1
+    #coverts the sets in inverted list to lists
     invertedIndex = {k:list(v) for k,v in invertedIndex.items()}
-    inverseDocFrequency = {k: math.log(len(docIds)/(len(v))) for k,v in invertedIndex.items()}        
+    #calculate the inverse doc frequency
+    inverseDocFrequency = {k: math.log(len(docIds)/(len(v))) for k,v in invertedIndex.items()}
+    #dictionary to store tf.idf       
     tf_idf = {}
+    #normalization vector
     normalization = {}
+    #loop through all the documents
     for id in docIds.keys():
+        #loop through all the unique terms in the document
         for term in termFrequency[id].keys():
             try:
+                #calculated the tf.idf for (doc, term) pair
                 tf_idf[id][term] = (math.log(termFrequency[id][term]) + 1.0) * inverseDocFrequency[term]
                 normalization[id] += tf_idf[id][term]**2
             except:
+                #calculated the tf.idf for (doc, term) pair
                 tf_idf[id] = {term:termFrequency[id][term] * inverseDocFrequency[term]}
                 normalization[id] = tf_idf[id][term]**2
-
+    #calculating the normalization value 
     normalization = {k: (v**(1/2)) for k,v in normalization.items()}
     
-
+    #calculating the normalized tf.idf 
     for id in docIds.keys():
         tf_idf[id] = { k: (v/normalization[id]) for k,v in tf_idf[id].items()}
 
+    #outputing the json files
     out = open('tfidf/tf.json','w', encoding='utf-8')
     json.dump(termFrequency, out,ensure_ascii=False)
     out.close()

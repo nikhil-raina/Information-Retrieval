@@ -81,7 +81,7 @@ if __name__ == "__main__":
     #     query = sys.argv[2:]
     #     doc_score = search(query, BM25)    
 
-    doc_score = search(['Rarity' ,'manehattan'], BM25)
+    doc_score = search(['Sounds', 'of', 'Silence'], BM25)
     # output the result to a json file.
     # with open('result.json', 'w',  encoding='utf-8') as result_file:
     #     json.dump(doc_score, result_file)
