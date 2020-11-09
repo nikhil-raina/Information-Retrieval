@@ -69,22 +69,27 @@ def search(query, scores):
 #main
 if __name__ == "__main__":
     # check input arguments 
-    # if len(sys.argv) < 2:
-    #     print('Usage : python project2.py <modelType> query')
-    #     print('modelType: tfidf | BM25')
-    #     exit()
-    # #check which model to test.
-    # if sys.argv[1] == 'tfidf':
-    #     query = sys.argv[2:]
-    #     doc_score = search(query, tf_idf)
-    # else:
-    #     query = sys.argv[2:]
-    #     doc_score = search(query, BM25)    
+    if len(sys.argv) < 2:
+        print('Usage : python project2.py <modelType> query')
+        print('modelType: tfidf | BM25')
+        exit()
+    #check which model to test.
+    if sys.argv[1] == 'tfidf':
+        query = sys.argv[2:]
+        doc_score = search(query, tf_idf)
+    else:
+        query = sys.argv[2:]
+        doc_score = search(query, BM25)    
 
-    doc_score = search(['Sounds', 'of', 'Silence'], BM25)
+    
+    # doc_score = search(['Sounds', 'of', 'Silence'], BM25)
+    # doc_score = search(['manehattan'], tf_idf)
+    # doc_score = search(['Twenty', 'five', 'different', 'types', 'of', 'tricks', 'and', 'counting'], tf_idf)
+
+
     # output the result to a json file.
-    # with open('result.json', 'w',  encoding='utf-8') as result_file:
-    #     json.dump(doc_score, result_file)
+    with open('result.json', 'w',  encoding='utf-8') as result_file:
+        json.dump(doc_score, result_file)
 
     
     
