@@ -4,53 +4,76 @@ import time
 from nltk.stem import PorterStemmer
 import preprocessing
 
+
+#loading json files created by preprocessing.py
 tf_idf = json.load(open('tfidf/tf_idf.json','r', encoding='utf-8'))
 BM25 = json.load(open('BM25/score.json','r', encoding='utf-8'))
 invertedIndex = json.load(open('tfidf/invertedIndex.json','r', encoding='utf-8'))
 docIds = json.load(open('tfidf/docIds.json','r', encoding='utf-8'))
 htmlId = json.load(open('tfidf/htmlIds.json','r', encoding='utf-8'))
+#stemmer 
 ps = PorterStemmer()
 
+#takes in query and scores and then ranks the 
 def search(query, scores):
+    
+    #log start time
     start_time = time.time()
+    
+    #stem the query words
     query_stem = [ps.stem(x.lower()) for x in query]
+
     doc_score = {}
+    #loop through each query word to find the score for each term
     for term in query_stem:
         try:
+            #loop through all the docs that have the term
             for doc_id in invertedIndex[term]:
                 doc_id = str(doc_id)
+                #add the score for that (doc, term)
                 try:
                     doc_score[doc_id] += scores[doc_id][term]
                 except:
                     doc_score[doc_id] = scores[doc_id][term]
         except:
             continue
+
+    #sort the doc_ids with respect to the scores 
     doc_score = [k for k, v in sorted(doc_score.items(), key = lambda item: item[1], reverse=True)]
-    summary = preprocessing.sentenceSelection(doc_score, query_stem)
+
+    #log the end time
+    end_time = time.time()
+
+    #get the summary for the ranked documents
+    summary = preprocessing.sentenceSelection(doc_score[0:10], query_stem)
+    
     finalResult = []
-    for doc_id in doc_score:
+    #create a data structure to return the results
+    for doc_id in doc_score[0:10]:
         document = {}
         document['title'] = docIds[doc_id]
         document['summary'] = summary[doc_id]
         document['link'] = htmlId[docIds[doc_id]]
         finalResult.append(document)
-
-    print('Execution Time: ', time.time()-start_time)
+    
+    print('Execution Time: ', end_time-start_time)
     print('Total unique matched documents: ', len(doc_score))
-    count = 0
+
+    #print the result to the console
     for doc in finalResult:
-        if count == 10:
-            break
-        print(doc['title'] + '\t' + doc['summary']+'\t'+doc['link'])
-        count+=1    
+        print(doc['title'] + '\t\t' + doc['summary']+'\t\t'+doc['link'])
+
     return {'query': query, 'result': finalResult}
 
 
+#main
 if __name__ == "__main__":
+    # check input arguments 
     # if len(sys.argv) < 2:
     #     print('Usage : python project2.py <modelType> query')
     #     print('modelType: tfidf | BM25')
-    #     exit()    
+    #     exit()
+    # #check which model to test.
     # if sys.argv[1] == 'tfidf':
     #     query = sys.argv[2:]
     #     doc_score = search(query, tf_idf)
@@ -59,9 +82,9 @@ if __name__ == "__main__":
     #     doc_score = search(query, BM25)    
 
     doc_score = search(['Rarity' ,'manehattan'], BM25)
-
-    with open('result.json', 'w') as result_file:
-        json.dump(doc_score, result_file)
+    # output the result to a json file.
+    # with open('result.json', 'w',  encoding='utf-8') as result_file:
+    #     json.dump(doc_score, result_file)
 
     
     

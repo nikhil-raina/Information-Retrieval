@@ -5,46 +5,47 @@ import re
 import json
 import math
 
-STOPWORDS = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", 
-            "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers',
-            'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 
-            'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have',
-            'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as',
-            'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 
-            'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then',
-            'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some',
-            'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', "don't",
-            'should', "should've", 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', "aren't", 'couldn', "couldn't", 'didn', "didn't",
-            'doesn', "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn',
-            "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', "won't", 
-            'wouldn', "wouldn't"]
+
 
 #using utf-8 format as the html files where encoded in that and has special chars that require it to be utf-8
 
+#loads .html file and separates all the documents
 def loadFile():
     documents = {} #key=doc; value=document
-    htmlIDs = {}
+    htmlIDs = {} #stores the tag ids for document headers in the HTML file in order to create links to the document
+    
     transcriptFile = open('p2-data/All Transcripts - My Little Pony Friendship is Magic Wiki.html', encoding='utf-8')
     soup = BeautifulSoup(transcriptFile.read(), 'html.parser')
     transcriptFile.close()
+    # finds the tag with id = 'mw-content-text', then finds p tag in it and gets it's contents
     tags = soup.find(id='mw-content-text').find('p').contents
     currDoc = None
     i=0
     while i < len(tags):
+        #skip tag that only have new lines
         if tags[i] != '\n':
+            #check if the current tag is h2, i.e. the title of the document
             if tags[i].name == 'h2':
+                #strip the string of extra spaces, tabs and new lines 
                 currDoc = tags[i].text.strip()
+                #access the id attribute of the tag, this is the title of the document
                 htmlID = tags[i].attrs['id']
                 htmlIDs[currDoc] = htmlID
+                #append the title to the document.
                 try:
                     documents[currDoc].append(currDoc)
                 except:
                     documents[currDoc] = [currDoc]
+            
             elif currDoc != None:
+                #the documents end with a table, so checks if the correct table tag is reached, 
+                # if it is reached then all the documents have been read
                 if tags[i].name == 'table':
+                    #checks if the class attribute is 'navbox'
                     attr =  tags[i].attrs
                     if 'class' in  attr.keys() and attr['class'] == 'navbox':
                         break
+                #reads the line and if it's not null adds it to the current document.
                 text = tags[i].text.strip()
                 if text:
                     documents[currDoc].append(text)
@@ -52,16 +53,29 @@ def loadFile():
     return documents, htmlIDs
 
 
-
+#select sentences to show in summary for the documents in doc_ids and words in query
 def sentenceSelection( docIds, query):
     global docs
+    #loading the term frequency
     termFrequency = json.load(open('tfidf/tf.json','r', encoding='utf-8'))
+    #loading the document ids
     docIds = json.load(open('tfidf/docIds.json','r',encoding='utf-8'))
+    #stemmer
     ps = PorterStemmer()
+    #stores sentences for each document in docIds
     documentSignificance = {} 
+    
+    #loops through all the documents
     for docId in docIds:
+        #get the document name
         docName = docIds[docId]
+
+        #separating sentences in the document 
+        docs[docName] = ' '.join(docs[docName]).split('.')
+
+        #document length
         sd = len(docs[docName])
+        #limit for the word to be significant
         if sd < 25:
             limit = 7 + (0.1*(sd-40))
         elif sd <= 40:
@@ -69,9 +83,9 @@ def sentenceSelection( docIds, query):
         else:
             limit = 7 - (0.1*(25-sd))
 
-        bestSentence = [None, None, None]
+        bestSentence = None
         s = ''
-        docs[docName] = ' '.join(docs[docName]).split('.')
+        
         for sentence in docs[docName]:
             tokens = re.split(r'\s+|['+punctuation+r']\s*', sentence.strip().lower())
             tokens = [ps.stem(k) for k in tokens]
@@ -86,16 +100,16 @@ def sentenceSelection( docIds, query):
                 else:
                     sigWords.append(0)
             try:
-                currSentence = ([sum(sigWords), sigWords.index(1), len(sigWords) - 1 - sigWords[::-1].index(1)])
+                currSentence = sum(sigWords)
             except:
                 continue
-            if bestSentence[1] == None or bestSentence[1] < currSentence[1]:
+            if bestSentence == None or bestSentence < currSentence:
                 bestSentence = currSentence
-                s = re.split(r'\s+|['+punctuation+r']\s*', sentence.strip())
-                s = ' '.join(s) + '\n'
+                s = sentence.replace('\n',' ') 
         documentSignificance[docId] = s
     return documentSignificance
 
+#creates index files for td.idf
 def indexDocsTdidf(docs, htmlIDs):
     ps = PorterStemmer()
     currDocId = 0
@@ -158,6 +172,7 @@ def indexDocsTdidf(docs, htmlIDs):
     json.dump(htmlIDs,out,ensure_ascii=False)
     out.close()
 
+#creates index files for BM25
 def indexDocsBM25(docs, htmlIDs):
     k1,  b  = 1.0, 0.75
     ps = PorterStemmer()
@@ -205,8 +220,8 @@ def indexDocsBM25(docs, htmlIDs):
 
 docs, htmlIDs = loadFile()
 
+
 if __name__ == "__main__":
     indexDocsTdidf(docs, htmlIDs)
     indexDocsBM25(docs, htmlIDs)    
-    pass
 
