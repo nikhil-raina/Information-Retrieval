@@ -71,7 +71,7 @@ def write_html(file, document_list):
             string_start_buffer += '\t\t</div>\n\t'
     string_end_buffer = string_start_buffer + "</body>\n</html>"
     file.write(string_end_buffer)
-    file_writer.close()
+    file.close()
 
 
 if __name__ == "__main__":
